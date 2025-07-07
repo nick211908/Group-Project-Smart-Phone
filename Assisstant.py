@@ -120,10 +120,10 @@ def match_command(text, keywords):
         return any(keyword in text for keyword in keywords)
 
 
-def main_assistant():
+def smart_assistant():
     # Replace with actual folders
     music_folder = "D:/Music"
-    video_folder = "D:/#ANIME/Fullmetal alchemist"
+    video_folder = "D:/Videos"
 
     music_player = MusicPlayer(music_folder)
     video_player = VideoPlayer(video_folder)
@@ -133,7 +133,6 @@ def main_assistant():
 
     while True:
         user_input = input("What do you want to do (or type 'exit')? ").strip().lower()
-        print(f"[DEBUG] You entered: {user_input}")
 
         if user_input in ("exit", "quit", "close"):
             print(" Exiting Smart Assistant.")
@@ -149,17 +148,25 @@ def main_assistant():
             youtube.search()
 
         elif "player" in user_input:
-            follow_up = input("Do you want music or video player? ").strip().lower()
-            if "music" in follow_up or "audio" in follow_up:
-                music_player.play_music()
-            elif "video" in follow_up:
-                video_player.play_video()
-            else:
-                print("Didn't understand. Please say music or video.")
+            while True:
+                follow_up = input("Do you want music or video player? Or do you want to exit? ").strip().lower()
+                    if "music" in follow_up or "audio" in follow_up:
+                        music_player.play_music()
+                        break
+                    elif "video" in follow_up:
+                        video_player.play_video()
+                        break
+                    elif "exit" in follow_up or "quit" in follow_up or "close" in follow_up:
+                        print(" Exiting Smart Assistant.")
+                        break
+                    else:
+                        print("Didn't understand. Please say music or video.")
+
+                
 
         else:
             print("I didn't understand that. Try something like 'music', 'video', or 'YouTube'.")
 
 # Run the Assistant
 if __name__ == "__main__":
-    main_assistant()
+    smart_assistant()
