@@ -14,14 +14,16 @@ This app is designed as a **monolithic single-file application** (`server.py`) u
 
 ## Some Screenshots
 
-![image](https://github.com/user-attachments/assets/adb3fbd2-d9ff-4b77-a714-212b8d82f73a)
-![image](https://github.com/user-attachments/assets/e52536e1-84bf-4b8d-aff9-e13833857b9e)
-![image](https://github.com/user-attachments/assets/92caa4c9-5010-479b-9516-e55c901f4008)
-![image](https://github.com/user-attachments/assets/0a63195d-3267-4240-a0b6-e7e91f6368c0)
-![image](https://github.com/user-attachments/assets/e85199a4-a183-4a5c-ad69-ccd4c51f17b0)
-![image](https://github.com/user-attachments/assets/fd3835c9-dca4-40ab-a287-04fa8d9bcc7d)
-![image](https://github.com/user-attachments/assets/5f00c902-3d9c-452b-acf2-67abbf672e06)
-![image](https://github.com/user-attachments/assets/5a7e2fb4-00cc-494a-9466-691fe919e712)
+![image](https://github.com/user-attachments/assets/e22c6c59-e910-41b2-82f2-3920dd6889ba)
+![image](https://github.com/user-attachments/assets/359caa7a-12b7-4944-a0cd-1a47554a7c86)
+![image](https://github.com/user-attachments/assets/cfafd8f5-0286-4438-9736-25f7e2f762c2)
+![image](https://github.com/user-attachments/assets/72b17bda-0d96-4a65-9c91-a42b418549d4)
+![image](https://github.com/user-attachments/assets/6cdc37e2-0665-4f92-8bf5-6e1f3836aaaf)
+![image](https://github.com/user-attachments/assets/b5ce060b-fce4-4e14-b1b9-68d75ed31359)
+![image](https://github.com/user-attachments/assets/2499ac6c-bea2-47a4-af99-6e8dabb7ddaa)
+![image](https://github.com/user-attachments/assets/26779775-a52b-4762-a3e6-d060b62d0d26)
+![image](https://github.com/user-attachments/assets/d4d7c6f5-ad2c-4d38-828b-232ee1e996c6)
+
 
 📁 Mobile_Phone_Project/
 ├── server.py # Main application logic and GUI
