@@ -260,14 +260,14 @@ class Mobile_Phone:
 # 5. Media and Music Player
 # ================================================
 
-    def scan_media_files(self, folder="./media", exts={".mp3", ".mp4", ".wav", ".mkv"}):
+    def scan_media_files(self, folder="./media", exts={".mp3", ".mp4", ".wav", ".mkv",".avi", ".mov", ".flv", ".webm", ".aac", ".flac", ".ogg", ".m4a"}):
         os.makedirs(folder, exist_ok=True)
         found = []
 
         # Step 1: File dialog to select new media files
         file_paths = filedialog.askopenfilenames(
             title="Select Media Files to Add",
-            filetypes=[("Media Files", "*.mp3 *.mp4 *.wav *.mkv")]
+            filetypes=[("Media Files", "*.mp3 *.mp4 *.wav *.mkv *.avi *.mov *.flv *.webm *.aac *.flac *.ogg *.m4a")],
         )
 
         for file_path in file_paths:
