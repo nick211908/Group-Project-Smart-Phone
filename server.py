@@ -697,7 +697,7 @@ def run_gui():
     phone = Mobile_Phone("Vrack's Team")
     root = tk.Tk()
     root.title("📱 Vracks's Team Virtual Phone")
-    root.geometry("400x700")
+    root.geometry("400x900")
     root.configure(bg="#dbeafe")
 
     # Group 1: Camera
