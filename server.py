@@ -815,7 +815,7 @@ def run_gui():
     tk.Label(left_frame, text="📡 Communication", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
     tk.Button(left_frame, text="✉️ Launch Email App", command=phone.launch_email_gui, width=50).pack(pady=3)
     tk.Button(left_frame, text="🌐 Open URL", command=phone.launch_url_opener, width=50).pack(pady=3)
-    tk.Button(left_frame, text="🌐 Open Google", command=webbrowser.open("https://www.google.com"), width=50).pack(pady=3)
+    tk.Button(left_frame, text="🌐 Open Google", command=phone.launch_url_opener("google.com"), width=50).pack(pady=3)
     tk.Button(left_frame, text="🎙️ Start Voice Assistant", command=phone.start_voice_assistant, width=50).pack(pady=3)
 
     # ================================
