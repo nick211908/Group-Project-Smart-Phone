@@ -531,9 +531,9 @@ class Mobile_Phone:
 
     def open_youtube_brave(self):
         try:
-            print("Attempting to search for 'Python programming' on YouTube...")
+            print("Attempting to search for YouTube...")
             webbrowser.open("https://www.youtube.com/")
-            print("Command sent to search for 'Python programming' on YouTube.")
+            print("Command sent to search for YouTube.")
         except Exception as e:
             print(f"Failed to search on YouTube: {e}")
     
