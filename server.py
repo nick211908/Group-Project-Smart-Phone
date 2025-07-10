@@ -259,15 +259,42 @@ class Mobile_Phone:
 # ================================================
 
     def scan_media_files(self, folder="./media", exts={".mp3", ".mp4", ".wav", ".mkv"}):
+        os.makedirs(folder, exist_ok=True)
         found = []
+
+        # Step 1: File dialog to select new media files
+        file_paths = filedialog.askopenfilenames(
+            title="Select Media Files to Add",
+            filetypes=[("Media Files", "*.mp3 *.mp4 *.wav *.mkv")]
+        )
+
+        for file_path in file_paths:
+            ext = os.path.splitext(file_path)[1].lower()
+            if ext in exts:
+                try:
+                    # Copy file to media folder
+                    file_name = os.path.basename(file_path)
+                    dest_path = os.path.join(folder, file_name)
+                    shutil.copy2(file_path, dest_path)
+                    print(f"✅ Copied {file_name} to {folder}")
+                    found.append(file_name)
+                except Exception as e:
+                    print(f"⚠️ Failed to copy {file_path}: {e}")
+
+        # Step 2: Also scan media folder for existing files
         for root_dir, _, files in os.walk(folder):
             for file in files:
                 if os.path.splitext(file)[1].lower() in exts:
-                    found.append(os.path.relpath(os.path.join(root_dir, file), folder))
-        # Do NOT save in binary — only in memory
+                    rel_path = os.path.relpath(os.path.join(root_dir, file), folder)
+                    found.append(rel_path)
+
+        # Step 3: Save updated media list to memory (not bin file)
         self.storage.setdefault("media_player", {"available_files": [], "history": [], "last_played": None})
-        self.storage["media_player"]["available_files"] = found
-        return found
+        self.storage["media_player"]["available_files"] = list(set(found))  # remove duplicates
+
+        print("🎵 Media scan complete. Files loaded:", self.storage["media_player"]["available_files"])
+        return self.storage["media_player"]["available_files"]
+
 
 
     
