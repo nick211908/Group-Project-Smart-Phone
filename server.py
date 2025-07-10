@@ -28,7 +28,7 @@ import speech_recognition as sr
 import google.generativeai as genai
 from plyer import notification
 import random
-
+from datetime import timedelta
 
 HISTORY_FILE = "email_history.json"
 LAST_EMAIL_FILE = "last_email.txt"
@@ -59,25 +59,26 @@ def speak(text):
     engine.say(text)
     engine.runAndWait()
 
-def listen_for_keyword():
+def listen_for_keyword(timeout=None):
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        print("🎙️ Listening...")
+        print("🎙️ Adjusting for noise...")
+        recognizer.adjust_for_ambient_noise(source, duration=1)
         speak("Listening... say your command.")
         try:
-            audio = recognizer.listen(source, timeout=5)
+            audio = recognizer.listen(source, timeout=timeout)
+            command = recognizer.recognize_google(audio).lower()
+            print(f"[Detected]: {command}")
+            return command
+        except sr.UnknownValueError:
+            speak("Sorry, I couldn't understand.")
         except sr.WaitTimeoutError:
-            speak("No speech detected.")
-            return ""
-    try:
-        command = recognizer.recognize_google(audio).lower()
-        print(f"[Detected]: {command}")
-        return command
-    except sr.UnknownValueError:
-        speak("Sorry, I couldn't understand.")
-    except sr.RequestError:
-        speak("Speech service is unavailable.")
+            speak("No input detected.")
+        except sr.RequestError:
+            speak("Speech service is unavailable.")
     return ""
+
+
 
 
 def match_command(input_text, commands):
@@ -93,6 +94,7 @@ class Mobile_Phone:
         self.storage_path = "./data/mobile_data.bin"
         self.storage = self.load_data(self.storage_path)
         self.push_data(self.storage_path, "user", self.user)
+        self.alarms = []
 
     def load_data(self, file_path):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -416,6 +418,26 @@ class Mobile_Phone:
 # 5. Photos and PDF Viewer
 # ================================================
 
+    def open_image_viewer(self, img_path):
+        win = tk.Toplevel()
+        win.title("🖼️ Image Viewer")
+        win.geometry("800x600")
+        win.configure(bg="#dbeafe")
+
+        try:
+            img = Image.open(img_path)
+            img = img.resize((800, 600), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+
+            label = tk.Label(win, image=photo, bg="#dbeafe")
+            label.image = photo  # 💡 Hold reference
+            label.pack(expand=True, fill="both")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Couldn't open image:\n{e}")
+
+
+
     def open_gallery(self, folder="./media/images"):
         
         win = tk.Toplevel()
@@ -473,7 +495,7 @@ class Mobile_Phone:
                         except Exception as e:
                             messagebox.showerror("Error", f"Could not open image:\n{e}")
 
-                    lbl.bind("<Button-1>", lambda e, path=img_path: open_img(path))
+                    lbl.bind("<Button-1>", lambda e, path=img_path: self.open_image_viewer(path))
 
                     col += 1
                     if col >= max_cols:
@@ -483,24 +505,23 @@ class Mobile_Phone:
                 except Exception as e:
                     print(f"⚠️ Error loading image: {file} | {e}")
 
-
     def open_pdf_viewer(self, pdf_path=None):
         if not pdf_path:
             pdf_path = filedialog.askopenfilename(
                 title="Select PDF",
                 filetypes=[("PDF Files", "*.pdf")]
             )
-
         if not pdf_path:
-            return  # User canceled
+            return
 
-        # Convert path to file URL and open in default browser
+        # Launch the PDF in a new process using pywebview
         try:
-            file_url = 'file://' + os.path.abspath(pdf_path).replace("\\", "/")
-            webbrowser.open(file_url)
-            print(f"✅ Opened PDF in browser: {file_url}")
+            subprocess.Popen(["python", "pdf_viewer.py", pdf_path])
+            print("✅ Launched PDF viewer window.")
         except Exception as e:
-            messagebox.showerror("PDF Error", f"Could not open PDF in browser:\n{e}")
+            messagebox.showerror("PDF Error", f"Could not open PDF:\n{e}")
+
+
 
 
 # ================================================
@@ -617,7 +638,7 @@ class Mobile_Phone:
             webbrowser.open("https://www.instagram.com/")
             print("Command sent to search for 'Instagram' ")
         except Exception as e:
-            print(f"Failed to search on YouTube: {e}")
+            print(f"Failed to open Instagram: {e}")
 
     def launch_google(self):
         try:
@@ -658,13 +679,44 @@ class Mobile_Phone:
             print(f"Failed to open WhatsApp: {e}")
 
 
-    def open_calculator(self):
-        try:
-            print("Attempting to open Calculator...")
-            os.system("start calc")
-            print("Command sent to open Calculator.")
-        except Exception as e:
-            print(f"Failed to open Calculator: {e}")
+    def open_calculator_gui(self):
+        def on_click(event):
+            btn_text = event.widget.cget("text")
+            if btn_text == "=":
+                try:
+                    result = str(eval(entry_var.get()))
+                    entry_var.set(result)
+                except Exception:
+                    entry_var.set("Error")
+            elif btn_text == "C":
+                entry_var.set("")
+            else:
+                entry_var.set(entry_var.get() + btn_text)
+
+        win = tk.Toplevel()
+        win.title("🧮 Calculator")
+        win.geometry("320x400")
+        win.configure(bg="#e0f7fa")
+
+        entry_var = tk.StringVar()
+        entry = tk.Entry(win, textvariable=entry_var, font=("Arial", 20), justify='right')
+        entry.pack(fill="both", ipadx=8, ipady=15, padx=10, pady=10)
+
+        btns = [
+            ['7', '8', '9', '/'],
+            ['4', '5', '6', '*'],
+            ['1', '2', '3', '-'],
+            ['C', '0', '=', '+']
+        ]
+
+        for row in btns:
+            frame = tk.Frame(win, bg="#e0f7fa")
+            frame.pack(expand=True, fill="both")
+            for btn in row:
+                button = tk.Button(frame, text=btn, font=("Arial", 18), width=5, height=2, bg="#b2ebf2")
+                button.pack(side="left", expand=True, fill="both", padx=5, pady=5)
+                button.bind("<Button-1>", on_click)
+
 
     def open_calendar(self):
         try:
@@ -686,77 +738,85 @@ class Mobile_Phone:
     def start_voice_assistant(self):
         def listen_loop():
             speak("Voice assistant is active. Say a command.")
-
             while True:
-                command = listen_for_keyword()
-                if not command:
-                    continue
+                try:
+                    command = listen_for_keyword()
+                    if not command:
+                        continue
 
-                if match_command(command, ["camera", "photo", "palm"]):
-                    speak("Launching AI Palm Camera.")
-                    threading.Thread(target=self.ai_camera_capture_palm).start()
+                    print(f"Received Command: {command}")  # Debug log
 
-                elif match_command(command, ["manual", "capture"]):
-                    speak("Capturing photo manually.")
-                    threading.Thread(target=self.manual_capture).start()
+                    if match_command(command, ["gallery"]):
+                        speak("Opening gallery.")
+                        self.open_gallery()
 
-                elif match_command(command, ["gallery"]):
-                    speak("Opening gallery.")
-                    threading.Thread(target=self.open_gallery).start()
+                    if match_command(command, ["camera", "photo", "palm"]):
+                        speak("Launching AI Palm Camera.")
+                        threading.Thread(target=self.ai_camera_capture_palm).start()
 
-                elif match_command(command, ["pdf", "document"]):
-                    speak("Opening PDF viewer.")
-                    threading.Thread(target=self.open_pdf_viewer).start()
+                    elif match_command(command, ["manual", "capture"]):
+                        speak("Capturing photo manually.")
+                        threading.Thread(target=self.manual_capture).start()
 
-                elif match_command(command, ["email", "gmail"]):
-                    speak("Launching email app.")
-                    threading.Thread(target=self.launch_email_gui).start()
+                    elif match_command(command, ["gallery"]):
+                        speak("Opening gallery.")
+                        threading.Thread(target=self.open_gallery).start()
 
-                elif match_command(command, ["url", "browser", "web"]):
-                    speak("Launching URL opener.")
-                    threading.Thread(target=self.launch_url_opener).start()
+                    elif match_command(command, ["pdf", "document"]):
+                        speak("Opening PDF viewer.")
+                        threading.Thread(target=self.open_pdf_viewer).start()
 
-                elif match_command(command, ["music", "media"]):
-                    speak("Please say the name of the file to play.")
-                    query = listen_for_keyword()
-                    if query:
-                        result, msg = self.play_media(query)
-                        speak(msg)
+                    elif match_command(command, ["email", "gmail"]):
+                        speak("Launching email app.")
+                        threading.Thread(target=self.launch_email_gui).start()
+
+                    elif match_command(command, ["url", "browser", "web"]):
+                        speak("Launching URL opener.")
+                        threading.Thread(target=self.launch_url_opener).start()
+
+                    elif match_command(command, ["music", "media"]):
+                        speak("Please say the name of the file to play.")
+                        query = listen_for_keyword()
+                        if query:
+                            result, msg = self.play_media(query)
+                            speak(msg)
+                        else:
+                            speak("No file recognized.")
+
+                    elif match_command(command, ["scan", "load", "media files"]):
+                        speak("Scanning for media.")
+                        self.scan_media_files()
+
+                    elif match_command(command, ["contacts", "contact list"]):
+                        speak("Reading saved contacts.")
+                        contacts = self.get_contacts()
+                        if contacts:
+                            for name, number in contacts:
+                                speak(f"{name}: {number}")
+                        else:
+                            speak("No contacts found.")
+
+                    elif match_command(command, ["call", "dial"]):
+                        speak("Whom do you want to call?")
+                        name_or_number = listen_for_keyword()
+                        if name_or_number:
+                            result, msg = self.make_call(name_or_number)
+                            speak(msg)
+                        else:
+                            speak("No contact name or number detected.")
+
+                    elif match_command(command, ["exit", "stop", "close"]):
+                        speak("Voice assistant stopped.")
+                        break
+
                     else:
-                        speak("No file recognized.")
+                        speak("Sorry, I didn't recognize that command.")
 
-                elif match_command(command, ["scan", "load", "media files"]):
-                    speak("Scanning for media.")
-                    self.scan_media_files()
+                except Exception as e:
+                    print(f"Voice loop error: {e}")
+                    speak("Something went wrong.")
 
-                elif match_command(command, ["contacts", "contact list"]):
-                    speak("Reading saved contacts.")
-                    contacts = self.get_contacts()
-                    if contacts:
-                        for name, number in contacts:
-                            speak(f"{name}: {number}")
-                    else:
-                        speak("No contacts found.")
-
-                elif match_command(command, ["call", "dial"]):
-                    speak("Whom do you want to call?")
-                    name_or_number = listen_for_keyword()
-                    if name_or_number:
-                        result, msg = self.make_call(name_or_number)
-                        speak(msg)
-                    else:
-                        speak("No contact name or number detected.")
-
-                elif match_command(command, ["exit", "stop", "close"]):
-                    speak("Voice assistant stopped.")
-                    break
-
-
-                else:
-                    speak("Sorry, I didn't recognize that command.")
-        print("Starting voice assistant...")
         threading.Thread(target=listen_loop, daemon=True).start()
-        print("Voice assistant is now listening for commands.")
 
 
 # ================================================
@@ -838,7 +898,7 @@ def run_gui():
 
     tk.Label(right_frame, text="🛠️ Utilities", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
     tk.Button(right_frame, text="⏰ Alarm & Reminders", command=phone.launch_alarm_gui, width=50).pack(pady=3)
-    tk.Button(right_frame, text="🧮 Calculator", command=phone.open_calculator, width=50).pack(pady=3)
+    tk.Button(right_frame, text="🧮 Calculator", command=phone.open_calculator_gui, width=50).pack(pady=3)
     tk.Button(right_frame, text="📅 Calendar", command=phone.open_calendar, width=50).pack(pady=3)
     tk.Button(right_frame, text="💬 WhatsApp", command=phone.open_whatsapp, width=50).pack(pady=3)
     tk.Button(right_frame, text="📺 YouTube", command=phone.open_youtube_brave, width=50).pack(pady=3)
