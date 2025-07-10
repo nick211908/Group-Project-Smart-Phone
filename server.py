@@ -333,7 +333,7 @@ class Mobile_Phone:
 
     def play_music_gui(self, folder="./media"):
         # Step 1: Scan Media Files
-        exts = {".mp3", ".wav"}
+        exts = {".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac"}
         files = []
         for root_dir, _, file_list in os.walk(folder):
             for file in file_list:
