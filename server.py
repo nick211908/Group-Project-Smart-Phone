@@ -42,6 +42,16 @@ adb_path = "adb"
 capture_mode = "quick"
 DEVICE_ID = None
 
+def ensure_media_folders():
+    folders = [
+        "./media",
+        "./media/images",
+        "./data"
+    ]
+    for folder in folders:
+        os.makedirs(folder, exist_ok=True)
+
+
 engine = pyttsx3.init()
 
 def speak(text):
@@ -52,10 +62,13 @@ def speak(text):
 def listen_for_keyword():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        speak("Listening... say your command.")
         print("🎙️ Listening...")
-        audio = recognizer.listen(source)
-
+        speak("Listening... say your command.")
+        try:
+            audio = recognizer.listen(source, timeout=5)
+        except sr.WaitTimeoutError:
+            speak("No speech detected.")
+            return ""
     try:
         command = recognizer.recognize_google(audio).lower()
         print(f"[Detected]: {command}")
@@ -63,8 +76,9 @@ def listen_for_keyword():
     except sr.UnknownValueError:
         speak("Sorry, I couldn't understand.")
     except sr.RequestError:
-        speak("Speech service is down.")
+        speak("Speech service is unavailable.")
     return ""
+
 
 def match_command(input_text, commands):
     return any(word in input_text for word in commands)
@@ -220,7 +234,7 @@ class Mobile_Phone:
         cv2.destroyAllWindows()
         print("Camera capture stopped.")
 
-    def manual_capture(self, save_dir="./media/images"):
+    def instant_capture(self, save_dir="./media/images"):
         os.makedirs(save_dir, exist_ok=True)
         cap = cv2.VideoCapture(0)
         ret, frame = cap.read()
@@ -230,6 +244,15 @@ class Mobile_Phone:
             cv2.imwrite(path, frame)
             print(f"📸 Manual capture saved to {path}")
         cap.release()
+
+
+    def manual_capture(self):
+        try:
+            print("Attempting to open Camera...")
+            os.system("start microsoft.windows.camera:")
+            print("Command sent to open Clock.")
+        except Exception as e:
+            print(f"Failed to open Clock: {e}")
 
 # ================================================
 # 5. Media and Music Player
@@ -367,67 +390,91 @@ class Mobile_Phone:
 # ================================================
 
     def open_gallery(self, folder="./media/images"):
+        
         win = tk.Toplevel()
         win.title("📸 Image Gallery")
+        win.geometry("800x600")
+        win.configure(bg="#dbeafe")
+
+        # Container
+        container = tk.Frame(win)
+        canvas = tk.Canvas(container, bg="#dbeafe", highlightthickness=0)
+        scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#dbeafe")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        container.pack(fill="both", expand=True)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Prevent garbage collection
+        self._gallery_images = []
+
+        # Layout
+        row = 0
+        col = 0
+        max_cols = 4  # Grid layout (4 columns)
+
         for file in os.listdir(folder):
-            if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if file.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
                 try:
                     img_path = os.path.join(folder, file)
                     img = Image.open(img_path)
-                    img = img.resize((200, 200))
+                    img.thumbnail((150, 150))
                     tk_img = ImageTk.PhotoImage(img)
-                    label = tk.Label(win, image=tk_img)
-                    label.image = tk_img
-                    label.pack(padx=5, pady=5)
+                    self._gallery_images.append(tk_img)  # prevent garbage collection
+
+                    # Image Label
+                    lbl = tk.Label(scrollable_frame, image=tk_img, bg="#dbeafe", cursor="hand2")
+                    lbl.grid(row=row, column=col, padx=10, pady=10)
+
+                    def open_img(path=img_path):
+                        try:
+                            if platform.system() == "Windows":
+                                os.startfile(path)
+                            elif platform.system() == "Darwin":
+                                os.system(f"open '{path}'")
+                            else:
+                                os.system(f"xdg-open '{path}'")
+                        except Exception as e:
+                            messagebox.showerror("Error", f"Could not open image:\n{e}")
+
+                    lbl.bind("<Button-1>", lambda e, path=img_path: open_img(path))
+
+                    col += 1
+                    if col >= max_cols:
+                        col = 0
+                        row += 1
+
                 except Exception as e:
-                    print(f"⚠️ Skipped corrupted image '{file}': {e}")
+                    print(f"⚠️ Error loading image: {file} | {e}")
 
 
     def open_pdf_viewer(self, pdf_path=None):
-        win = tk.Toplevel()
-        win.title("📄 PDF Viewer")
-        win.geometry("900x700")
-
         if not pdf_path:
-            pdf_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
-        if not pdf_path:
-            return
-
-        try:
-            doc = fitz.open(pdf_path)
-
-            container = tk.Frame(win)
-            canvas = tk.Canvas(container, width=850, bg="white")
-            scrollbar = tk.Scrollbar(container, orient="vertical", command=canvas.yview)
-            scroll_frame = tk.Frame(canvas)
-
-            scroll_frame.bind(
-                "<Configure>",
-                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            pdf_path = filedialog.askopenfilename(
+                title="Select PDF",
+                filetypes=[("PDF Files", "*.pdf")]
             )
 
-            canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-            canvas.configure(yscrollcommand=scrollbar.set)
+        if not pdf_path:
+            return  # User canceled
 
-            container.pack(fill="both", expand=True)
-            canvas.pack(side="left", fill="both", expand=True)
-            scrollbar.pack(side="right", fill="y")
-
-            for i, page in enumerate(doc):
-                pix = page.get_pixmap(dpi=150)
-                image_data = pix.tobytes("png")
-                image = Image.open(io.BytesIO(image_data))
-                image = image.resize((800, int(800 * image.height / image.width)), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(image)
-
-                label = tk.Label(scroll_frame, image=photo, bg="white")
-                label.image = photo  # Keep a reference
-                label.pack(pady=10)
-
-            doc.close()
-
+        # Convert path to file URL and open in default browser
+        try:
+            file_url = 'file://' + os.path.abspath(pdf_path).replace("\\", "/")
+            webbrowser.open(file_url)
+            print(f"✅ Opened PDF in browser: {file_url}")
         except Exception as e:
-            messagebox.showerror("PDF Error", f"Could not display PDF:\n{e}")
+            messagebox.showerror("PDF Error", f"Could not open PDF in browser:\n{e}")
+
 
 # ================================================
 # 6. Email and Communication
@@ -531,9 +578,9 @@ class Mobile_Phone:
 
     def open_youtube_brave(self):
         try:
-            print("Attempting to search for YouTube...")
+            print("Attempting to search for 'Python programming' on YouTube...")
             webbrowser.open("https://www.youtube.com/")
-            print("Command sent to search for YouTube.")
+            print("Command sent to search for 'Python programming' on YouTube.")
         except Exception as e:
             print(f"Failed to search on YouTube: {e}")
     
@@ -584,6 +631,103 @@ class Mobile_Phone:
         except Exception as e:
             print(f"Failed to open Calculator: {e}")
 
+    def open_calendar(self):
+        try:
+            print("Attempting to open Calendar...")
+            os.system("start outlookcal:")
+            print("Command sent to open Calendar.")
+        except Exception as e:
+            print(f"Failed to open Calendar: {e}")
+    
+
+
+
+
+
+# ================================================
+# 8 AI Voice Assistant Logic
+# ================================================
+
+    def start_voice_assistant(self):
+        def listen_loop():
+            speak("Voice assistant is active. Say a command.")
+
+            while True:
+                command = listen_for_keyword()
+                if not command:
+                    continue
+
+                if match_command(command, ["camera", "photo", "palm"]):
+                    speak("Launching AI Palm Camera.")
+                    threading.Thread(target=self.ai_camera_capture_palm).start()
+
+                elif match_command(command, ["manual", "capture"]):
+                    speak("Capturing photo manually.")
+                    threading.Thread(target=self.manual_capture).start()
+
+                elif match_command(command, ["gallery"]):
+                    speak("Opening gallery.")
+                    threading.Thread(target=self.open_gallery).start()
+
+                elif match_command(command, ["pdf", "document"]):
+                    speak("Opening PDF viewer.")
+                    threading.Thread(target=self.open_pdf_viewer).start()
+
+                elif match_command(command, ["email", "gmail"]):
+                    speak("Launching email app.")
+                    threading.Thread(target=self.launch_email_gui).start()
+
+                elif match_command(command, ["url", "browser", "web"]):
+                    speak("Launching URL opener.")
+                    threading.Thread(target=self.launch_url_opener).start()
+
+                elif match_command(command, ["music", "media"]):
+                    speak("Please say the name of the file to play.")
+                    query = listen_for_keyword()
+                    if query:
+                        result, msg = self.play_media(query)
+                        speak(msg)
+                    else:
+                        speak("No file recognized.")
+
+                elif match_command(command, ["scan", "load", "media files"]):
+                    speak("Scanning for media.")
+                    self.scan_media_files()
+
+                elif match_command(command, ["contacts", "contact list"]):
+                    speak("Reading saved contacts.")
+                    contacts = self.get_contacts()
+                    if contacts:
+                        for name, number in contacts:
+                            speak(f"{name}: {number}")
+                    else:
+                        speak("No contacts found.")
+
+                elif match_command(command, ["call", "dial"]):
+                    speak("Whom do you want to call?")
+                    name_or_number = listen_for_keyword()
+                    if name_or_number:
+                        result, msg = self.make_call(name_or_number)
+                        speak(msg)
+                    else:
+                        speak("No contact name or number detected.")
+
+                elif match_command(command, ["exit", "stop", "close"]):
+                    speak("Voice assistant stopped.")
+                    break
+
+
+                else:
+                    speak("Sorry, I didn't recognize that command.")
+        print("Starting voice assistant...")
+        threading.Thread(target=listen_loop, daemon=True).start()
+        print("Voice assistant is now listening for commands.")
+
+
+# ================================================
+# Other Web Control Functions
+# ================================================
+
 
 def load_last_url():
     if os.path.exists(URL_HISTORY_FILE):
@@ -603,142 +747,79 @@ def validate_url(url):
     return url
 
 
-
-# def smart_assistant():
-#     phone = Mobile_Phone("Rudresh")
-#     print("Welcome to Smart Assistant!")
-#     while True:
-#         user_input = input("\nCommand (or type 'exit'): ").strip().lower()
-#         if user_input in ("exit", "quit", "close"):
-#             break
-#         elif match_command(user_input, ["camera", "photo"]):
-#             threading.Thread(target=phone.ai_camera_capture_palm).start()
-#         elif match_command(user_input, ["email"]):
-#             threading.Thread(target=phone.launch_email_gui).start()
-#         elif match_command(user_input, ["url", "browser"]):
-#             threading.Thread(target=phone.launch_url_opener).start()
-#         elif match_command(user_input, ["gallery"]):
-#             threading.Thread(target=phone.open_gallery).start()
-#         elif match_command(user_input, ["pdf"]):
-#             threading.Thread(target=phone.open_pdf_viewer).start()
-#         elif user_input in ("voice", "speak", "say", "mic", "voice command"):
-#             command = listen_for_keyword()
-
-#             if not command:
-#                 speak("No command detected.")
-#                 continue
-
-#             if match_command(command, ["camera", "photo"]):
-#                 speak("Launching AI Palm Camera.")
-#                 threading.Thread(target=phone.ai_camera_capture_palm).start()
-
-#             elif match_command(command, ["manual", "capture"]):
-#                 speak("Taking manual photo.")
-#                 threading.Thread(target=phone.manual_capture).start()
-
-#             elif match_command(command, ["gallery", "image", "photo"]):
-#                 speak("Opening image gallery.")
-#                 threading.Thread(target=phone.open_gallery).start()
-
-#             elif match_command(command, ["pdf", "document"]):
-#                 speak("Opening PDF viewer.")
-#                 threading.Thread(target=phone.open_pdf_viewer).start()
-
-#             elif match_command(command, ["email", "gmail", "send mail"]):
-#                 speak("Opening email sender.")
-#                 threading.Thread(target=phone.launch_email_gui).start()
-
-#             elif match_command(command, ["url", "browser", "web", "website"]):
-#                 speak("Launching web opener.")
-#                 threading.Thread(target=phone.launch_url_opener).start()
-
-#             elif match_command(command, ["media", "music", "video", "play"]):
-#                 speak("Please say the name of the media file to play.")
-#                 query = listen_for_keyword()
-#                 if query:
-#                     result, msg = phone.play_media(query)
-#                     speak(msg)
-#                 else:
-#                     speak("No media name recognized.")
-
-#             elif match_command(command, ["scan", "load", "media files"]):
-#                 speak("Scanning media files.")
-#                 phone.scan_media_files()
-
-#             elif match_command(command, ["contact", "contacts", "show contacts"]):
-#                 speak("Fetching your saved contacts.")
-#                 contacts = phone.get_contacts()
-#                 if contacts:
-#                     for name, number in contacts:
-#                         speak(f"{name}: {number}")
-#                 else:
-#                     speak("No contacts found.")
-
-#             elif match_command(command, ["call", "dial", "phone call"]):
-#                 speak("Whom do you want to call?")
-#                 name_or_number = listen_for_keyword()
-#                 if name_or_number:
-#                     result, msg = phone.make_call(name_or_number)
-#                     speak(msg)
-#                 else:
-#                     speak("No contact name or number detected.")
-
-#             else:
-#                 speak("Sorry, I didn't recognize that voice command.")
-
-#         else:
-#             print("Unknown command. Try: camera, email, browser, gallery, pdf")
-
 # ================================================
-# 8. GUI Logic
+# 9. GUI Logic
 # ================================================
 
 def run_gui():
     phone = Mobile_Phone("Vrack's Team")
     root = tk.Tk()
     root.title("📱 Vracks's Team Virtual Phone")
-    root.geometry("400x900")
+    root.geometry("800x900")  # Wider window to fit both columns
     root.configure(bg="#dbeafe")
 
-    # Group 1: Camera
-    tk.Label(root, text="Camera", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=5)
-    tk.Button(root, text="📷 AI Palm Camera", command=phone.ai_camera_capture_palm, width=30).pack(pady=3)
-    tk.Button(root, text="📸 Manual Photo", command=phone.manual_capture, width=30).pack(pady=3)
+    def on_close():
+        print("🔒 Virtual Phone App closed by user.")
+        root.destroy()
 
-    # Group 2: Media & Gallery
-    tk.Label(root, text="Media & Files", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
-    tk.Button(root, text="🖼️ Open Gallery", command=phone.open_gallery, width=30).pack(pady=3)
-    tk.Button(root, text="📄 Open PDF", command=phone.open_pdf_viewer, width=30).pack(pady=3)
-    tk.Button(root, text="🎵 Scan Media", command=phone.scan_media_files, width=30).pack(pady=3)
-    tk.Button(root, text="🎵 Play Music", command=phone.play_music_gui, width=30).pack(pady=3)
-    tk.Button(root, text="🎧 Play Media", command=phone.play_media_gui, width=30).pack(pady=3)
+    root.protocol("WM_DELETE_WINDOW", on_close)
 
-    # Group 3: Phone & Contacts
-    tk.Label(root, text="Phone & Contacts", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
-    tk.Button(root, text="📞 Make Call", command=lambda: phone.make_call_gui(), width=30).pack(pady=3)
-    tk.Button(root, text="📇 View Contacts", command=phone.view_contacts_gui, width=30).pack(pady=3)
-    tk.Button(root, text="➕ Save Contact", command=phone.save_contact_gui, width=30).pack(pady=3)
+    # Create left and right panels
+    left_frame = tk.Frame(root, bg="#dbeafe")
+    right_frame = tk.Frame(root, bg="#dbeafe")
+    bottom_frame = tk.Frame(root, bg="#dbeafe")
+    left_frame.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+    right_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
+    bottom_frame.pack(side="bottom", fill="both", expand=True, padx=10, pady=400)
 
-    # Group 4: Communication
-    tk.Label(root, text="Communication", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
-    tk.Button(root, text="✉️ Launch Email App", command=phone.launch_email_gui, width=30).pack(pady=3)
-    tk.Button(root, text="🌐 Open Web App", command=phone.launch_url_opener, width=30).pack(pady=3)
+    # ================================
+    # 📍 LEFT PANEL (Camera + Contacts + Communication)
+    # ================================
+    tk.Label(left_frame, text="📷 Camera", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=5)
+    tk.Button(left_frame, text="📷 AI Palm Camera", command=phone.ai_camera_capture_palm, width=50).pack(pady=3)
+    tk.Button(left_frame, text="📸 Instant Camera", command=phone.instant_capture, width=50).pack(pady=3)
+    tk.Button(left_frame, text="📸 Camera", command=phone.manual_capture, width=50).pack(pady=3)
 
-    
-    # Group 5: Utility Apps
-    tk.Label(root, text="Utilities", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
-    tk.Button(root, text="⏰ Alarm & Reminders", command=phone.launch_alarm_gui, width=30).pack(pady=3)
-    tk.Button(root, text="WhatsApp", command=phone.open_whatsapp, width=30).pack(pady=3)
-    tk.Button(root, text="YouTube", command=phone.open_youtube_brave, width=30).pack(pady=3)
-    tk.Button(root, text="Instagram", command=phone.open_instagram_brave, width=30).pack(pady=3)
+    tk.Label(left_frame, text="📇 Phone & Contacts", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
+    tk.Button(left_frame, text="📞 Make Call", command=phone.make_call_gui, width=50).pack(pady=3)
+    tk.Button(left_frame, text="📇 View Contacts", command=phone.view_contacts_gui, width=50).pack(pady=3)
+    tk.Button(left_frame, text="➕ Save Contact", command=phone.save_contact_gui, width=50).pack(pady=3)
 
+    tk.Label(left_frame, text="📡 Communication", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
+    tk.Button(left_frame, text="✉️ Launch Email App", command=phone.launch_email_gui, width=50).pack(pady=3)
+    tk.Button(left_frame, text="🌐 Open URL", command=phone.launch_url_opener, width=50).pack(pady=3)
+    tk.Button(left_frame, text="🌐 Open Google", command=webbrowser.open("https://www.google.com"), width=50).pack(pady=3)
+    tk.Button(left_frame, text="🎙️ Start Voice Assistant", command=phone.start_voice_assistant, width=50).pack(pady=3)
 
-    # Exit
-    tk.Button(root, text="🚪 Exit App", command=root.destroy, bg="red", fg="white", width=30).pack(pady=20)
+    # ================================
+    # 📍 RIGHT PANEL (Media + Utilities)
+    # ================================
+    tk.Label(right_frame, text="🎵 Media & Files", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=5)
+    tk.Button(right_frame, text="🖼️ Open Gallery", command=phone.open_gallery, width=50).pack(pady=3)
+    tk.Button(right_frame, text="📄 Open PDF", command=phone.open_pdf_viewer, width=50).pack(pady=3)
+    tk.Button(right_frame, text="🎵 Scan Media", command=phone.scan_media_files, width=50).pack(pady=3)
+    tk.Button(right_frame, text="🎵 Play Music", command=phone.play_music_gui, width=50).pack(pady=3)
+    tk.Button(right_frame, text="🎧 Play Media", command=phone.play_media_gui, width=50).pack(pady=3)
+
+    tk.Label(right_frame, text="🛠️ Utilities", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
+    tk.Button(right_frame, text="⏰ Alarm & Reminders", command=phone.launch_alarm_gui, width=50).pack(pady=3)
+    tk.Button(right_frame, text="🧮 Calculator", command=phone.open_calculator, width=50).pack(pady=3)
+    tk.Button(right_frame, text="📅 Calendar", command=phone.open_calendar, width=50).pack(pady=3)
+    tk.Button(right_frame, text="💬 WhatsApp", command=phone.open_whatsapp, width=50).pack(pady=3)
+    tk.Button(right_frame, text="📺 YouTube", command=phone.open_youtube_brave, width=50).pack(pady=3)
+    tk.Button(right_frame, text="📸 Instagram", command=phone.open_instagram_brave, width=50).pack(pady=3)
+
+    # ================================
+    # Footer
+    # ================================
+    tk.Button(right_frame, text="🚪 Exit App", command=root.destroy, bg="red", fg="white", width=700).pack(pady=20)
 
     root.mainloop()
 
 
 if __name__ == '__main__':
+    ensure_media_folders()
     threading.Thread(target=run_gui).start()
     # smart_assistant()
+
+
