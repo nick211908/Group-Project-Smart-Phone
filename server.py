@@ -27,7 +27,7 @@ import webview
 import speech_recognition as sr
 import google.generativeai as genai
 from plyer import notification
-
+import random
 
 
 HISTORY_FILE = "email_history.json"
@@ -210,9 +210,15 @@ class Mobile_Phone:
                             last_click_time = now
             cv2.rectangle(frame, (100, 100), (400, 400), (0, 255, 0), 2)
             cv2.imshow("Palm Capture", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'): break
+                # Break on 'q' OR if window is closed manually
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            if cv2.getWindowProperty("Palm Capture", cv2.WND_PROP_VISIBLE) < 1:
+                break
+
         cap.release()
         cv2.destroyAllWindows()
+        print("Camera capture stopped.")
 
     def manual_capture(self, save_dir="./media/images"):
         os.makedirs(save_dir, exist_ok=True)
@@ -258,6 +264,87 @@ class Mobile_Phone:
         self.storage["media_player"]["history"].append({"file": file, "time": str(datetime.now())})
         self.push_data(self.storage_path, "media_player", self.storage["media_player"])
         return ("success", f"Playing '{file}'")
+    
+    def open_file(self, filepath):
+        try:
+            if platform.system() == "Windows":
+                os.startfile(filepath)
+            elif platform.system() == "Darwin":
+                os.system(f"open '{filepath}'")
+            else:
+                os.system(f"xdg-open '{filepath}'")
+        except Exception as e:
+            print(f"Error opening file: {e}")
+
+    def play_music_gui(self, folder="./media"):
+        # Step 1: Scan Media Files
+        exts = {".mp3", ".wav"}
+        files = []
+        for root_dir, _, file_list in os.walk(folder):
+            for file in file_list:
+                if os.path.splitext(file)[1].lower() in exts:
+                    rel_path = os.path.relpath(os.path.join(root_dir, file), folder)
+                    files.append(rel_path)
+
+        if not files:
+            messagebox.showinfo("No Music", "No music files found.")
+            return
+
+        self.storage.setdefault("media_player", {"available_files": [], "history": [], "last_played": None})
+        self.storage["media_player"]["available_files"] = files
+
+        # Step 2: Create GUI Window
+        win = tk.Toplevel()
+        win.title("🎧 Music Player")
+        win.geometry("500x400")
+        win.configure(bg="#dbeafe")
+
+        tk.Label(win, text="🎵 Search or Shuffle Music", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
+
+        entry_var = tk.StringVar()
+        entry = tk.Entry(win, textvariable=entry_var, width=40, font=("Helvetica", 11))
+        entry.pack(pady=5)
+
+        # Step 3: Play Selected
+        def play_selected():
+            user_input = entry_var.get().strip().lower()
+            if not user_input:
+                messagebox.showwarning("Missing Input", "Please type a song name.")
+                return
+
+            match = difflib.get_close_matches(user_input, files, n=1, cutoff=0.4)
+            if match:
+                file = match[0]
+                filepath = os.path.join(folder, file)
+                self.open_file(filepath)
+                self.storage["media_player"]["history"].append({"file": file, "time": str(datetime.now())})
+                messagebox.showinfo("Now Playing", f"▶️ Playing: {file}")
+            else:
+                messagebox.showerror("Not Found", "No close match found.")
+
+        # Step 4: Shuffle Play
+        def shuffle_play():
+            file = random.choice(files)
+            filepath = os.path.join(folder, file)
+            self.open_file(filepath)
+            self.storage["media_player"]["history"].append({"file": file, "time": str(datetime.now())})
+            messagebox.showinfo("Shuffled", f"▶️ Playing: {file}")
+
+        # Buttons
+        tk.Button(win, text="▶️ Play", command=play_selected, bg="#4CAF50", fg="white", font=("Helvetica", 11)).pack(pady=10)
+        tk.Button(win, text="🔀 Shuffle", command=shuffle_play, bg="#2196F3", fg="white", font=("Helvetica", 11)).pack(pady=5)
+
+
+    def open_file(self, filepath):
+        try:
+            if platform.system() == "Windows":
+                os.startfile(filepath)
+            elif platform.system() == "Darwin":
+                os.system(f"open '{filepath}'")
+            else:
+                os.system(f"xdg-open '{filepath}'")
+        except Exception as e:
+            print(f"Error opening file: {e}")
     
     def play_media_gui(self, folder="./media"):
         files = self.storage.get("media_player", {}).get("available_files", [])
@@ -348,97 +435,13 @@ class Mobile_Phone:
         except Exception as e:
             messagebox.showerror("PDF Error", f"Could not display PDF:\n{e}")
 
-
-
-
     def launch_email_gui(self):
-        def send_email():
-            name = name_entry.get()
-            to_email = to_email_entry.get()
-            topic = topic_entry.get()
-            from_email = your_email_entry.get()
-            app_password = app_pass_entry.get()
-            gemini_key = gemini_key_entry.get()
-            tone = tone_var.get()
-            subject = f"Regarding {topic.title()}"
-            attachment_path = attachment_label['text']
-
-            if not all([name, to_email, topic, from_email, app_password, gemini_key]):
-                messagebox.showerror("Error", "All fields except attachment are required.")
-                return
-
-            self.setup_gemini(gemini_key)
-            body = self.generate_gemini_message(name, topic, tone)
-
-            if body.startswith("Error:"):
-                messagebox.showerror("Gemini Error", body)
-                return
-
-            msg = EmailMessage()
-            msg['Subject'] = subject
-            msg['From'] = from_email
-            msg['To'] = to_email
-            msg.set_content(body)
-
-            if attachment_path and os.path.isfile(attachment_path):
-                try:
-                    with open(attachment_path, 'rb') as f:
-                        file_data = f.read()
-                        file_name = os.path.basename(attachment_path)
-                        msg.add_attachment(file_data, maintype='application', subtype='octet-stream', filename=file_name)
-                except Exception as e:
-                    messagebox.showerror("Attachment Error", f"Failed to attach file: {e}")
-                    return
-
-            try:
-                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                    smtp.login(from_email, app_password)
-                    smtp.send_message(msg)
-                self.save_to_history(name, to_email, topic, tone, body)
-                self.export_last_email(subject, body)
-                messagebox.showinfo("Success", "✅ Email sent successfully!")
-            except Exception as e:
-                messagebox.showerror("SMTP Error", f"❌ Failed to send email: {e}")
-
-        def choose_file():
-            file_path = filedialog.askopenfilename()
-            if file_path:
-                attachment_label.config(text=file_path)
-
-        email_root = Toplevel()
-        email_root.title("Email Sender")
-        email_root.geometry("650x600")
-        email_root.configure(bg=BG_COLOR)
-
-        Label(email_root, text="Email Sender", font=("Helvetica", 20, "bold"), bg=BG_COLOR, fg=FG_COLOR).pack(pady=15)
-
-        def field(label_text, is_pass=False):
-            frame = Frame(email_root, bg=BG_COLOR)
-            frame.pack(pady=5)
-            Label(frame, text=label_text, font=("Helvetica", 12), bg=BG_COLOR, fg=FG_COLOR).pack(anchor="w")
-            entry = Entry(frame, width=50, font=("Helvetica", 11), bg=ENTRY_BG, fg=FG_COLOR, show="*" if is_pass else "")
-            entry.pack()
-            return entry
-
-        name_entry = field("Recipient Name:")
-        to_email_entry = field("Recipient Email:")
-        topic_entry = field("Email Topic:")
-        your_email_entry = field("Your Gmail:")
-        app_pass_entry = field("Gmail Password:", is_pass=True)
-        gemini_key_entry = field("API Key:", is_pass=True)
-
-        tone_var = StringVar(value="friendly")
-        tone_frame = Frame(email_root, bg=BG_COLOR)
-        tone_frame.pack(pady=5)
-        Label(tone_frame, text="Select Tone:", font=("Helvetica", 12), bg=BG_COLOR, fg=FG_COLOR).pack(anchor="w")
-        ttk.Combobox(tone_frame, textvariable=tone_var, values=["friendly", "formal", "flirty", "funny", "strict"], width=47).pack()
-
-        Button(email_root, text="📎 Choose Attachment", command=choose_file, bg="#3498db", fg="white", font=("Helvetica", 10)).pack(pady=5)
-        attachment_label = Label(email_root, text="", bg=BG_COLOR, fg="#bdc3c7", font=("Helvetica", 9))
-        attachment_label.pack()
-
-        Button(email_root, text="🚀 Send Email", command=send_email, bg=BTN_COLOR, fg="white", font=("Helvetica", 13, "bold"), width=30).pack(pady=20)
-
+        try:
+            print("Attempting to Open Gmail...")
+            webbrowser.open("https://www.gmail.com/")
+            print("Command sent to search for 'Python programming' on YouTube.")
+        except Exception as e:
+            print(f"Failed to search on YouTube: {e}")
 
 
     def setup_gemini(self, api_key):
@@ -475,7 +478,6 @@ class Mobile_Phone:
             f.write(f"Subject: {subject}\n\n{body}")
 
 
-
     def launch_url_opener(self):
         def open_url():
             url = validate_url(url_entry.get())
@@ -495,6 +497,7 @@ class Mobile_Phone:
                 messagebox.showinfo("Opened", f"Successfully opened:\n{url}")
             except Exception as e:
                 messagebox.showerror("Failed", f"Could not open URL:\n{e}")
+
 
         def toggle_dark_mode():
             global DARK_MODE
@@ -527,7 +530,7 @@ class Mobile_Phone:
     def open_youtube_brave(self):
         try:
             print("Attempting to search for 'Python programming' on YouTube...")
-            os.system("start msedge https://www.youtube.com/results?search_query=Python+programming")
+            webbrowser.open("https://www.youtube.com/")
             print("Command sent to search for 'Python programming' on YouTube.")
         except Exception as e:
             print(f"Failed to search on YouTube: {e}")
@@ -547,71 +550,12 @@ class Mobile_Phone:
             print("⚠️ Chrome not found.")
 
     def launch_alarm_gui(self):
-        def add_alarm():
-            time_val = time_entry.get()
-            note_val = note_entry.get()
-            if not time_val or not note_val:
-                messagebox.showerror("Error", "Please fill both time and note.")
-                return
-            alarms = self.storage.get("alarm", {})
-            alarms[time_val] = note_val
-            self.storage["alarm"] = alarms
-            self.push_data(self.storage_path, "alarm", alarms)
-            messagebox.showinfo("Success", f"Alarm for {time_val} saved!")
-
-        def view_alarms():
-            win = Toplevel()
-            win.title("⏰ Saved Alarms")
-            alarms = self.storage.get("alarm", {})
-            if not alarms:
-                tk.Label(win, text="No alarms set.", font=("Helvetica", 12)).pack(padx=10, pady=10)
-            else:
-                for time_str, msg in alarms.items():
-                    tk.Label(win, text=f"{time_str} ➜ {msg}", font=("Helvetica", 12)).pack(pady=3)
-
-        win = Toplevel()
-        win.title("⏰ Alarm App")
-        win.geometry("350x300")
-        win.configure(bg=BG_COLOR)
-
-        tk.Label(win, text="Set New Alarm", font=("Helvetica", 14, "bold"), bg=BG_COLOR, fg=FG_COLOR).pack(pady=10)
-
-        frame = Frame(win, bg=BG_COLOR)
-        frame.pack(pady=5)
-        tk.Label(frame, text="Time (HH:MM):", font=("Helvetica", 11), bg=BG_COLOR, fg=FG_COLOR).pack()
-        time_entry = tk.Entry(frame, font=("Helvetica", 11))
-        time_entry.pack()
-
-        tk.Label(frame, text="Note/Reminder:", font=("Helvetica", 11), bg=BG_COLOR, fg=FG_COLOR).pack(pady=5)
-        note_entry = tk.Entry(frame, font=("Helvetica", 11))
-        note_entry.pack()
-
-        tk.Button(win, text="➕ Add Alarm", command=add_alarm, bg="#198754", fg="white").pack(pady=10)
-        tk.Button(win, text="📋 View Alarms", command=view_alarms, bg="#0d6efd", fg="white").pack()
-
-    def start_alarm_checker(self):
-
-        def check_alarms():
-            while True:
-                now = datetime.now().strftime("%H:%M")
-                alarms = self.storage.get("alarm", {})
-                if now in alarms:
-                    note = alarms[now]
-                    for _ in range(3):  # Repeat 3 times
-                        speak(f"Alarm! {note}")
-                        notification.notify(
-                            title="⏰ Alarm Alert!",
-                            message=f"{now} - {note}",
-                            timeout=5
-                        )
-                        time.sleep(10)  # Wait 10 sec between announcements
-                    # Remove triggered alarm to avoid infinite repeats
-                    del alarms[now]
-                    self.storage["alarm"] = alarms
-                    self.push_data(self.storage_path, "alarm", alarms)
-                time.sleep(30)  # Check every 30 seconds
-
-        threading.Thread(target=check_alarms, daemon=True).start()
+        try:
+            print("Attempting to open Clock...")
+            os.system("start ms-clock:")
+            print("Command sent to open Clock.")
+        except Exception as e:
+            print(f"Failed to open Clock: {e}")
 
     def open_whatsapp(self):
         try:
@@ -620,6 +564,15 @@ class Mobile_Phone:
             print("Command sent to open WhatsApp.")
         except Exception as e:
             print(f"Failed to open WhatsApp: {e}")
+
+
+    def open_calculator(self):
+        try:
+            print("Attempting to open Calculator...")
+            os.system("start calc")
+            print("Command sent to open Calculator.")
+        except Exception as e:
+            print(f"Failed to open Calculator: {e}")
 
 
 def load_last_url():
@@ -728,10 +681,9 @@ def validate_url(url):
 
 
 def run_gui():
-    phone = Mobile_Phone("Rudresh")
-    phone.start_alarm_checker()
+    phone = Mobile_Phone("Vrack's Team")
     root = tk.Tk()
-    root.title("📱 Rudresh's Virtual Phone")
+    root.title("📱 Vracks's Team Virtual Phone")
     root.geometry("400x700")
     root.configure(bg="#dbeafe")
 
@@ -745,7 +697,7 @@ def run_gui():
     tk.Button(root, text="🖼️ Open Gallery", command=phone.open_gallery, width=30).pack(pady=3)
     tk.Button(root, text="📄 Open PDF", command=phone.open_pdf_viewer, width=30).pack(pady=3)
     tk.Button(root, text="🎵 Scan Media", command=phone.scan_media_files, width=30).pack(pady=3)
-    tk.Button(root, text="🎵 Scan Media", command=phone.scan_media_files, width=30).pack(pady=3)
+    tk.Button(root, text="🎵 Play Music", command=phone.play_music_gui, width=30).pack(pady=3)
     tk.Button(root, text="🎧 Play Media", command=phone.play_media_gui, width=30).pack(pady=3)
 
     # Group 3: Phone & Contacts
