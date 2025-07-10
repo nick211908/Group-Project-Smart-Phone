@@ -1,144 +1,189 @@
 # Group-Project-Smart-Phone
 A OOPs based Project that will implement all functionality of working Smart Phone
 
-# 📱 Vracks Team Virtual Phone - Python Mobile Simulation App
+# 📱 Vracks's Virtual Phone (Tkinter + ADB + AI + Voice Assistant)
 
-A powerful, GUI-based mobile phone simulation application developed in Python using Tkinter. This desktop-based virtual phone integrates multimedia, AI-powered utilities, communication tools, and a file system — emulating core functionalities of a smartphone.
-
----
-
-## 🏗️ Project Structure
-
-This app is designed as a **monolithic single-file application** (`server.py`) using class-based modular functions under the `Mobile_Phone` class. It also integrates multi-threading and file I/O to simulate a responsive, dynamic phone environment.
-
-
-## Some Screenshots
-
-![image](https://github.com/user-attachments/assets/e22c6c59-e910-41b2-82f2-3920dd6889ba)
-![image](https://github.com/user-attachments/assets/359caa7a-12b7-4944-a0cd-1a47554a7c86)
-![image](https://github.com/user-attachments/assets/cfafd8f5-0286-4438-9736-25f7e2f762c2)
-![image](https://github.com/user-attachments/assets/72b17bda-0d96-4a65-9c91-a42b418549d4)
-![image](https://github.com/user-attachments/assets/6cdc37e2-0665-4f92-8bf5-6e1f3836aaaf)
-![image](https://github.com/user-attachments/assets/b5ce060b-fce4-4e14-b1b9-68d75ed31359)
-![image](https://github.com/user-attachments/assets/2499ac6c-bea2-47a4-af99-6e8dabb7ddaa)
-![image](https://github.com/user-attachments/assets/26779775-a52b-4762-a3e6-d060b62d0d26)
-![image](https://github.com/user-attachments/assets/d4d7c6f5-ad2c-4d38-828b-232ee1e996c6)
-
-
-📁 Mobile_Phone_Project/
-├── server.py # Main application logic and GUI
-├── 📁 data/ # Persistent storage (pickle-based)
-│ └── mobile_data.bin # User data and app storage
-├── 📁 media/ # All user-generated media
-│ └── 📁 images/ # Saved snapshots
-├── 📁 templates/ (if used) # [Optional: for Flask extension]
-└── 📄 README.md # This file
-
+Welcome to **Vracks's Virtual Phone** — a smart mobile simulation app built using Python, Tkinter GUI, ADB shell, OpenCV AI camera, and Gemini-powered email composer. This virtual phone system mimics a smartphone experience with real desktop interactions.
 
 ---
 
-## 🧠 Features and Modules
+## 🚀 Features
 
-The app is split into the following major segments:
+### 🎙️ AI Voice Assistant
+- Activate with **voice commands**
+- Supports commands like:
+  - "Open gallery", "Take palm photo", "Open PDF", "Play music", etc.
 
-### 1. 🌐 Global Configuration
-- Imports essential libraries: `cv2`, `tkinter`, `PIL`, `smtplib`, `speech_recognition`, `pyttsx3`, `webbrowser`, etc.
-- Sets global constants for theme colors, ADB path, and storage files.
-- Voice engine and command recognition support.
+### 📷 AI Camera
+- **Palm detection** to auto-click photos using OpenCV
+- **Manual capture** with instant webcam shot
+- 📁 Saves all images to `./media/images/`
 
----
+### 📇 Contacts & Calling (via ADB)
+- Save/view contacts locally
+- Call contact by name or number using ADB:
+  - `adb shell am start -a android.intent.action.CALL -d tel:{number}`
 
-### 2. 📦 Mobile_Phone Class (Main App Controller)
+### 🎵 Media & Music Player
+- Scan and play local `.mp3`, `.wav`, `.mp4`, `.mkv` files
+- Smart **search** and **shuffle play**
+- Interactive GUI list selection
 
-Handles:
-- Persistent file-based storage using `pickle`.
-- Modular app logic for each functionality.
-- Stores all app data under `self.storage`.
+### 🖼️ Image Gallery
+- Dynamic thumbnail-based gallery view
+- Click to open image in default viewer
+- Loads images from `./media/images/`
 
----
+### 📄 PDF Viewer
+- Select and open PDF using system's browser
+- Supports file dialog selection
 
-### 3. 📇 Contacts App
-- `save_contact_gui()`: Save new contacts via GUI.
-- `view_contacts_gui()`: Display all saved contacts.
-- `make_call_gui()`: Use ADB to simulate calls to contacts or numbers.
+### ✉️ Email Generator (Gemini AI)
+- Launch Gmail from the app
+- Auto-generate email with Gemini:
+  - Input: name, topic, tone → Output: formatted email body
+- Saves history in `email_history.json`
 
----
+### 🌐 URL Launcher
+- Opens any URL in **tab/window**
+- Toggleable **dark mode UI**
+- Saves last used URL in `url_history.json`
 
-### 4. 🤖 AI Camera App
-- `ai_camera_capture_palm()`: Uses OpenCV to click images when palm is detected.
-- `manual_capture()`: Takes one-click snapshots.
-- `open_gallery()`: Displays captured images in a scrollable gallery view.
+### 🧠 AI + Voice
+- Uses:
+  - `pyttsx3` for TTS
+  - `speech_recognition` for command detection
+  - Google Gemini for email writing
 
----
-
-### 5. 📽️ Media Player & Scanner
-- `scan_media_files()`: Scans and indexes all `.mp3`, `.mp4`, `.wav`, etc. in `/media`.
-- `play_media_gui()`: GUI to play selected media.
-- Supports OS-level opening using `os.startfile()` or `xdg-open`.
-
----
-
-### 6. 📄 PDF Viewer
-- `open_pdf_viewer()`: Opens multi-page PDF using `PyMuPDF` with scrollable Tkinter GUI.
-
----
-
-### 7. ✉️ AI Email Sender
-- `launch_email_gui()`: Compose and send Gmail using Gemini AI to generate personalized body content.
-- Attachments supported.
-- History and last email saved in JSON/text files.
-
----
-
-### 8. 🌍 URL Launcher
-- `launch_url_opener()`: Opens any URL in browser (tab/window mode).
-- Dark mode toggle and URL history feature.
-
----
-
-### 9. 🎬 YouTube + Chrome Launcher
-- Opens a predefined YouTube search (`"Python programming"`) in MS Edge.
-- Can launch Google Chrome if installed.
+### 📦 Utility Apps
+- Open system apps with `os.system()`:
+  - WhatsApp (`start whatsapp:`)
+  - Camera (`microsoft.windows.camera:`)
+  - Calculator (`start calc`)
+  - Calendar (`start outlookcal:`)
+  - YouTube / Instagram in browser
 
 ---
 
-### 10. ⏰ Alarm & Reminders
-- `launch_alarm_gui()`: Set reminders in "HH:MM ➜ Note" format.
-- `start_alarm_checker()`: Background thread checks every 30s and uses voice + desktop notifications.
+## 🧱 Project Structure
+
+├── media/
+
+│ ├── images/ # AI Camera and Manual Captures
+
+│ ├── (music/videos) # Media scanned and played
+
+├── data/
+
+│ ├── mobile_data.bin # Contact & Media Storage (Pickle)
+
+├── server.py # 📱 Main Script
 
 ---
 
-### 11. 📞 WhatsApp Launcher
-- Opens WhatsApp (if available) using `os.system("start whatsapp:")`.
+## 🖼️ Screenshots
+
+> 📌 _Add screenshots here for each app window._
+
+| Feature            | Screenshot Preview                      |
+|--------------------|------------------------------------------|
+| **Main GUI Layout** | ![Main UI](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4acae14d-4750-482f-b6fc-ece934c4c4e9" />) |
+| **Palm Detection**  | ![Palm Camera](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c55f2134-7343-4fab-8a50-ac6bda70bd93" />) |
+| **Gallery Viewer**  | ![Gallery](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/eebcf817-ed29-4cea-afc7-85aa3ee5c77f" />)  |
+| **Music Player**    | ![Music Player](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/60bb9624-cb9d-4504-be50-9a1b3154d90d" />) |
+| **Media Player**    | ![Media Player](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/68272cf4-cda3-41c7-a5d1-89dd07b64475" />) |
+| **Contact Manager** | ![Contacts](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3c1d85be-5b6a-49d4-87bf-df59d360cbdc" />) |
+| **URL Launcher**    | ![URL](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a4ccff48-7af8-4fc3-a9ce-e86c5e984f21" />) |
+
+📝 _Place all screenshots in the `./screenshots/` folder in your project root._
 
 ---
 
-## 🎛️ GUI Layout Overview
+## 🎥 Recordings
 
-Tkinter GUI layout is grouped logically:
+> 📌 _Embed or link demo videos here (YouTube, Drive, etc.)._
 
-- **Camera Apps**
-- **Media & Files**
-- **Phone & Contacts**
-- **Communication Tools**
-- **Utility Apps (Alarms, WhatsApp, YouTube)**
+- 🎬 [**Demo - Full Virtual Phone Experience**](https://screenrec.com/share/R8snTIfrm7)
+
+💡 _For best viewing, host on YouTube or Google Drive with public access._
 
 ---
-
-## 💾 Storage & Persistence
-
-- `./data/mobile_data.bin` → All contacts, media history, alarms stored using `pickle`.
-- `email_history.json` → All Gemini-generated emails.
-- `last_email.txt` → Stores last composed email.
-- `url_history.json` → Stores last opened URL.
-
 ---
 
-## 🛠️ Dependencies
+## 🛠️ Requirements
 
-Install via:
+Install required libraries via `pip`:
 
 ```bash
-pip install opencv-python pyttsx3 pillow PyMuPDF google-generativeai speechrecognition pywebview plyer
+pip install opencv-python pillow pyttsx3 plyer SpeechRecognition google-generativeai PyMuPDF
+```
+
+✅ **Ensure ADB is installed** and added to your system `PATH` for call functionality to work.
+
+---
+
+## 🧠 Technologies Used
+
+- 🐍 **Python 3.8+**
+- 🖼️ **Tkinter GUI** for the mobile interface
+- 🧠 **OpenCV** for palm detection via webcam
+- 📄 **PyMuPDF** for PDF file rendering
+- ✨ **Google Gemini API** for AI-powered email composition
+- 🔊 **Pyttsx3** for text-to-speech responses
+- 🗣️ **SpeechRecognition** for capturing voice commands
+- 📞 **ADB (Android Debug Bridge)** to simulate calling from PC
+
+---
+
+## 🧑‍💻 Author
+
+Made with ❤️ by **Vracks's Team**
+
+---
+
+## 📌 Note
+
+This app is built for **desktop simulation only**.  
+Ensure your system has:
+
+- A webcam for AI Camera features
+- Internet access for Gemini API
+- ADB configured for call simulation
+- A default browser to open PDFs, URLs, etc.
+
+---
+
+## 🧪 To Run
+
+```bash
+python vracks_virtual_phone.py
+```
+
+Make sure all required folders are auto-created:
+
+```
+./media/
+├── images/        # Camera captures
+./data/            # Stores contacts and media info
+```
+
+---
+
+## ✨ Contribute
+
+PRs and ideas are welcome! Some planned improvements include:
+
+- 📬 Gemini-powered Email **sending** via SMTP
+- 🔍 AI-based Smart Search
+- ⚙️ Dynamic App Configuration System
+- 🌈 Custom themes & sound effects
+
+---
+
+## 📄 License
+
+Licensed under the **MIT License** — free for personal and educational use.
+
+---
 
 
