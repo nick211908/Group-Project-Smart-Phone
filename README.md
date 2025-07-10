@@ -35,7 +35,7 @@ Welcome to **Vracks's Virtual Phone** — a smart mobile simulation app built us
 - Loads images from `./media/images/`
 
 ### 📄 PDF Viewer
-- Select and open PDF using system's browser
+- Select and open PDF in a GUI within a chrome pdf reader
 - Supports file dialog selection
 
 ### ✉️ Email Generator (Gemini AI)
