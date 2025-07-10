@@ -231,6 +231,9 @@ class Mobile_Phone:
             print(f"📸 Manual capture saved to {path}")
         cap.release()
 
+# ================================================
+# 5. Media and Music Player
+# ================================================
 
     def scan_media_files(self, folder="./media", exts={".mp3", ".mp4", ".wav", ".mkv"}):
         found = []
@@ -334,18 +337,6 @@ class Mobile_Phone:
         tk.Button(win, text="▶️ Play", command=play_selected, bg="#4CAF50", fg="white", font=("Helvetica", 11)).pack(pady=10)
         tk.Button(win, text="🔀 Shuffle", command=shuffle_play, bg="#2196F3", fg="white", font=("Helvetica", 11)).pack(pady=5)
 
-
-    def open_file(self, filepath):
-        try:
-            if platform.system() == "Windows":
-                os.startfile(filepath)
-            elif platform.system() == "Darwin":
-                os.system(f"open '{filepath}'")
-            else:
-                os.system(f"xdg-open '{filepath}'")
-        except Exception as e:
-            print(f"Error opening file: {e}")
-    
     def play_media_gui(self, folder="./media"):
         files = self.storage.get("media_player", {}).get("available_files", [])
         if not files:
@@ -371,6 +362,9 @@ class Mobile_Phone:
 
         tk.Button(win, text="▶️ Play", command=play_selected, bg="green", fg="white").pack(pady=10)
 
+# ================================================
+# 5. Photos and PDF Viewer
+# ================================================
 
     def open_gallery(self, folder="./media/images"):
         win = tk.Toplevel()
@@ -434,6 +428,10 @@ class Mobile_Phone:
 
         except Exception as e:
             messagebox.showerror("PDF Error", f"Could not display PDF:\n{e}")
+
+# ================================================
+# 6. Email and Communication
+# ================================================
 
     def launch_email_gui(self):
         try:
@@ -527,11 +525,23 @@ class Mobile_Phone:
         dark_button = tk.Button(root, text="🌙 Dark Mode", command=toggle_dark_mode, font=('Arial', 10))
         dark_button.pack()
 
+# ================================================
+# 7. Utility Apps
+# ================================================
+
     def open_youtube_brave(self):
         try:
             print("Attempting to search for 'Python programming' on YouTube...")
             webbrowser.open("https://www.youtube.com/")
             print("Command sent to search for 'Python programming' on YouTube.")
+        except Exception as e:
+            print(f"Failed to search on YouTube: {e}")
+    
+    def open_instagram_brave(self):
+        try:
+            print("Attempting to search for Instagram ...")
+            webbrowser.open("https://www.instagram.com/")
+            print("Command sent to search for 'Instagram' ")
         except Exception as e:
             print(f"Failed to search on YouTube: {e}")
 
@@ -679,6 +689,9 @@ def validate_url(url):
 #         else:
 #             print("Unknown command. Try: camera, email, browser, gallery, pdf")
 
+# ================================================
+# 8. GUI Logic
+# ================================================
 
 def run_gui():
     phone = Mobile_Phone("Vrack's Team")
@@ -717,6 +730,7 @@ def run_gui():
     tk.Button(root, text="⏰ Alarm & Reminders", command=phone.launch_alarm_gui, width=30).pack(pady=3)
     tk.Button(root, text="WhatsApp", command=phone.open_whatsapp, width=30).pack(pady=3)
     tk.Button(root, text="YouTube", command=phone.open_youtube_brave, width=30).pack(pady=3)
+    tk.Button(root, text="Instagram", command=phone.open_instagram_brave, width=30).pack(pady=3)
 
 
     # Exit
