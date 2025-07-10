@@ -619,6 +619,14 @@ class Mobile_Phone:
         except Exception as e:
             print(f"Failed to search on YouTube: {e}")
 
+    def launch_google(self):
+        try:
+            print("Attempting to open Google ...")
+            webbrowser.open("https://www.google.com/")
+            print("Command sent to search for 'Google'.")
+        except Exception as e:
+            print(f"Failed to open Google: {e}")
+
     def open_chrome():
     # Try to find Chrome path
         chrome_path = None
@@ -815,7 +823,7 @@ def run_gui():
     tk.Label(left_frame, text="📡 Communication", font=("Helvetica", 14, "bold"), bg="#dbeafe").pack(pady=10)
     tk.Button(left_frame, text="✉️ Launch Email App", command=phone.launch_email_gui, width=50).pack(pady=3)
     tk.Button(left_frame, text="🌐 Open URL", command=phone.launch_url_opener, width=50).pack(pady=3)
-    tk.Button(left_frame, text="🌐 Open Google", command=phone.launch_url_opener("google.com"), width=50).pack(pady=3)
+    tk.Button(left_frame, text="🌐 Open Google", command=phone.launch_google, width=50).pack(pady=3)
     tk.Button(left_frame, text="🎙️ Start Voice Assistant", command=phone.start_voice_assistant, width=50).pack(pady=3)
 
     # ================================
