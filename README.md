@@ -87,13 +87,13 @@ Welcome to **Vracks's Virtual Phone** — a smart mobile simulation app built us
 
 | Feature            | Screenshot Preview                      |
 |--------------------|------------------------------------------|
-| **Main GUI Layout** | ![Main UI](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4acae14d-4750-482f-b6fc-ece934c4c4e9" />) |
-| **Palm Detection**  | ![Palm Camera](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c55f2134-7343-4fab-8a50-ac6bda70bd93" />) |
-| **Gallery Viewer**  | ![Gallery](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/eebcf817-ed29-4cea-afc7-85aa3ee5c77f" />)  |
-| **Music Player**    | ![Music Player](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/60bb9624-cb9d-4504-be50-9a1b3154d90d" />) |
-| **Media Player**    | ![Media Player](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/68272cf4-cda3-41c7-a5d1-89dd07b64475" />) |
-| **Contact Manager** | ![Contacts](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3c1d85be-5b6a-49d4-87bf-df59d360cbdc" />) |
-| **URL Launcher**    | ![URL](<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a4ccff48-7af8-4fc3-a9ce-e86c5e984f21" />) |
+| **Main GUI Layout** | ![Main UI] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4acae14d-4750-482f-b6fc-ece934c4c4e9" />) |
+| **Palm Detection**  | ![Palm Camera] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/c55f2134-7343-4fab-8a50-ac6bda70bd93" />) |
+| **Gallery Viewer**  | ![Gallery] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/eebcf817-ed29-4cea-afc7-85aa3ee5c77f" />)  |
+| **Music Player**    | ![Music Player] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/60bb9624-cb9d-4504-be50-9a1b3154d90d" />) |
+| **Media Player**    | ![Media Player] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/68272cf4-cda3-41c7-a5d1-89dd07b64475" />) |
+| **Contact Manager** | ![Contacts] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/3c1d85be-5b6a-49d4-87bf-df59d360cbdc" />) |
+| **URL Launcher**    | ![URL] (<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a4ccff48-7af8-4fc3-a9ce-e86c5e984f21" />) |
 
 📝 _Place all screenshots in the `./screenshots/` folder in your project root._
 
