@@ -1,0 +1,12 @@
+livekit-agents
+livekit-plugins-google
+livekit-plugins-noise-cancellation
+mem0ai
+duckduckgo-search
+langchain_community
+requests
+python-dotenv
+smtplib    # Built-in, doesn't need install but included for clarity
+opencv-python
+pillow
+pyttsx3
