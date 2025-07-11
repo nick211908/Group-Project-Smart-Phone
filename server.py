@@ -4,6 +4,7 @@
 import io
 from logging import root
 import os
+import sys
 import subprocess
 import webbrowser
 import shutil
@@ -78,11 +79,12 @@ def listen_for_keyword(timeout=None):
             speak("Speech service is unavailable.")
     return ""
 
-
-
-
 def match_command(input_text, commands):
     return any(word in input_text for word in commands)
+
+LIVEKIT_WS_URL = "wss://assistant-r67rp7n4.livekit.cloud"
+LIVEKIT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTgxNzQ3OTMsImlzcyI6IkFQSXUydUhuSzQ4MnFYOSIsIm5iZiI6MTc1MjEyNjY5Mywic3ViIjoiRlJJREFZIiwidmlkZW8iOnsiY2FuUHVibGlzaCI6dHJ1ZSwiY2FuUHVibGlzaERhdGEiOnRydWUsImNhblN1YnNjcmliZSI6dHJ1ZSwicm9vbSI6IlZBUkNLUyIsInJvb21Kb2luIjp0cnVlfX0.RGx9sgPyGeko-QCYFQ1_gEdyWSOhN62GzvPgHMZR8Fw"  # Your long JWT token
+
 
 # ================================================
 # 2. Mobile_Phone Class and Data Handling
@@ -735,88 +737,47 @@ class Mobile_Phone:
 # 8 AI Voice Assistant Logic
 # ================================================
 
-    def start_voice_assistant(self):
-        def listen_loop():
-            speak("Voice assistant is active. Say a command.")
-            while True:
-                try:
-                    command = listen_for_keyword()
-                    if not command:
-                        continue
 
-                    print(f"Received Command: {command}")  # Debug log
+    def launch_assistant_and_browser(gui_window=None):
+        python_path = sys.executable
+        script_path = os.path.join(os.getcwd(), "agent.py")
+       
+       # Build LiveKit Playground URL
+        playground_url = f"https://agents-playground.livekit.io/?token={LIVEKIT_TOKEN}&url={LIVEKIT_WS_URL}"
+      
+        try:
+            # Launch your assistant agent in 'dev' mode
+            subprocess.Popen([python_path, script_path, "console"])
+      
+               # Open LiveKit playground in browser
+               # webbrowser.open_new_tab(playground_url)
 
-                    if match_command(command, ["gallery"]):
-                        speak("Opening gallery.")
-                        self.open_gallery()
+              # Minimize GUI if passed
+            # if gui_window:
+            #       gui_window.iconify()
 
-                    if match_command(command, ["camera", "photo", "palm"]):
-                        speak("Launching AI Palm Camera.")
-                        threading.Thread(target=self.ai_camera_capture_palm).start()
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Failed to launch assistant:\n{e}")
+           # TRY TO OPEN ASSISTANT IN LIVEKIT PLAYGROUND IN CHROME  
+           # try:
+           #     # Launch your assistant agent in 'dev' mode
+           #     subprocess.Popen([python_path, script_path, "dev"])
+      
+           #     # Open LiveKit playground in Chrome
+           #     chrome_path = shutil.which("chrome") or shutil.which("google-chrome")
+           #     if not chrome_path:
+             #         chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+        #     if os.path.exists(chrome_path):
+        #         subprocess.Popen([chrome_path, playground_url])
+         #         # Minimize GUI if passed
+           #         if gui_window:
+        #             gui_window.iconify()
+        #     else:
+        #         messagebox.showerror("Error", "Chrome not found. Please install Chrome or set the correct path.")   
+        # except Exception as e:
+        #     messagebox.showerror("Error", f"Failed to launch assistant or browser:\n{e}")
 
-                    elif match_command(command, ["manual", "capture"]):
-                        speak("Capturing photo manually.")
-                        threading.Thread(target=self.manual_capture).start()
-
-                    elif match_command(command, ["gallery"]):
-                        speak("Opening gallery.")
-                        threading.Thread(target=self.open_gallery).start()
-
-                    elif match_command(command, ["pdf", "document"]):
-                        speak("Opening PDF viewer.")
-                        threading.Thread(target=self.open_pdf_viewer).start()
-
-                    elif match_command(command, ["email", "gmail"]):
-                        speak("Launching email app.")
-                        threading.Thread(target=self.launch_email_gui).start()
-
-                    elif match_command(command, ["url", "browser", "web"]):
-                        speak("Launching URL opener.")
-                        threading.Thread(target=self.launch_url_opener).start()
-
-                    elif match_command(command, ["music", "media"]):
-                        speak("Please say the name of the file to play.")
-                        query = listen_for_keyword()
-                        if query:
-                            result, msg = self.play_media(query)
-                            speak(msg)
-                        else:
-                            speak("No file recognized.")
-
-                    elif match_command(command, ["scan", "load", "media files"]):
-                        speak("Scanning for media.")
-                        self.scan_media_files()
-
-                    elif match_command(command, ["contacts", "contact list"]):
-                        speak("Reading saved contacts.")
-                        contacts = self.get_contacts()
-                        if contacts:
-                            for name, number in contacts:
-                                speak(f"{name}: {number}")
-                        else:
-                            speak("No contacts found.")
-
-                    elif match_command(command, ["call", "dial"]):
-                        speak("Whom do you want to call?")
-                        name_or_number = listen_for_keyword()
-                        if name_or_number:
-                            result, msg = self.make_call(name_or_number)
-                            speak(msg)
-                        else:
-                            speak("No contact name or number detected.")
-
-                    elif match_command(command, ["exit", "stop", "close"]):
-                        speak("Voice assistant stopped.")
-                        break
-
-                    else:
-                        speak("Sorry, I didn't recognize that command.")
-
-                except Exception as e:
-                    print(f"Voice loop error: {e}")
-                    speak("Something went wrong.")
-
-        threading.Thread(target=listen_loop, daemon=True).start()
 
 
 # ================================================
@@ -845,17 +806,40 @@ def validate_url(url):
 # ================================================
 # 9. GUI Logic
 # ================================================
+phone = Mobile_Phone("Vrack's Team")
+
+def open_ai_camera(): phone.ai_camera_capture_palm()
+def open_instant_camera(): phone.instant_capture()
+def open_manual_camera(): phone.manual_capture()
+def open_contacts(): phone.view_contacts_gui()
+def make_call(): phone.make_call_gui()
+def save_contact(): phone.save_contact_gui()
+def open_email_app(): phone.launch_email_gui()
+def open_url_opener(): phone.launch_url_opener()
+def open_google(): phone.launch_google()
+def open_music_player(): phone.play_music_gui()
+def open_media_player(): phone.play_media_gui()
+def scan_media(): phone.scan_media_files()
+def open_calendar(): phone.open_calendar()
+def open_whatsapp(): phone.open_whatsapp()
+def open_youtube(): phone.open_youtube_brave()
+def open_instagram(): phone.open_instagram_brave()
+def open_pdf_viewer(): phone.open_pdf_viewer()
+def open_voice_assistant(): phone.launch_assistant_and_browser()
+def open_gallery(): phone.open_gallery()
+def open_calculator_gui(): phone.open_calculator_gui()
+def launch_alarm_gui(): phone.launch_alarm_gui()
+def on_close():
+    print("🔒 Virtual Phone App closed by user.")
+    os.exit(0)
+    root.destroy()
 
 def run_gui():
-    phone = Mobile_Phone("Vrack's Team")
+    global phone
     root = tk.Tk()
     root.title("📱 Vracks's Team Virtual Phone")
     root.geometry("800x900")  # Wider window to fit both columns
     root.configure(bg="#dbeafe")
-
-    def on_close():
-        print("🔒 Virtual Phone App closed by user.")
-        root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", on_close)
 
@@ -884,7 +868,7 @@ def run_gui():
     tk.Button(left_frame, text="✉️ Launch Email App", command=phone.launch_email_gui, width=50).pack(pady=3)
     tk.Button(left_frame, text="🌐 Open URL", command=phone.launch_url_opener, width=50).pack(pady=3)
     tk.Button(left_frame, text="🌐 Open Google", command=phone.launch_google, width=50).pack(pady=3)
-    tk.Button(left_frame, text="🎙️ Start Voice Assistant", command=phone.start_voice_assistant, width=50).pack(pady=3)
+    tk.Button(left_frame, text="🎙️ Start Voice Assistant", command=phone.launch_assistant_and_browser, width=50).pack(pady=3)
 
     # ================================
     # 📍 RIGHT PANEL (Media + Utilities)
